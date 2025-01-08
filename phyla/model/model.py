@@ -409,7 +409,7 @@ class Phyla(nn.Module):
 
         return result
 
-    def reconstruct_tree(self, matrix, ids):
+    def reconstruct_tree(self, sequence_embeddings, sequence_names):
         """
         Creates tree from pairwise distance matrix
         Input: (list of [float]) pairwise distance matrix
@@ -418,9 +418,9 @@ class Phyla(nn.Module):
 
         From scikit-bio docs: https://scikit.bio/docs/latest/generated/skbio.tree.nj.html#skbio.tree.nj
         """
-
+        distance_matrix = torch.cdist(sequence_embeddings, sequence_embeddings, compute_mode='donot_use_mm_for_euclid_dist').cpu().detach().numpy()[0]
         # Reconstruct tree using scikit bio
-        dm = DistanceMatrix(matrix, ids)
+        dm = DistanceMatrix(distance_matrix, sequence_names)
         tree = nj(dm)
         return tree
 
