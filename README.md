@@ -1,5 +1,7 @@
 # Phyla: Towards a Foundation Model for Phylogenetic Inference
 
+![Tree of life](img/16S_sequences.png)
+
 ## What is Phyla? 
 
 Phyla is a next-generation protein language model designed to model both individual sequences and inter-sequence relationships. It leverages a hybrid state-space transformer architecture and is trained on two tasks: masked language modeling and phylogenetic tree reconstruction using sequence embeddings. Phyla enables rapid construction of meaningful phylogenetic trees of protein sequences, offering insights that differ from classical methods in potentially functionally significant ways.
