@@ -325,13 +325,18 @@ class Phyla(nn.Module):
                                    "S": 15, "T": 16, "W": 17, "Y": 18, "V": 19}
 
 
-    def __init__(self, config_path=None, logger = None, deepspeed = False):
+    def __init__(self, config_path=None, logger = None, name=None, deepspeed = False):
         super().__init__()
 
-        config = Config()
-        if config_path: 
-            config = load_config(config_path)
-
+        if name is None:
+            raise Exception("No name provided must provide a model name, see README for available names")
+        elif name == 'phyla-alpha':
+            config = Config()
+            if config_path: 
+                config = load_config(config_path)
+        else:
+            raise Exception(f"Name {name} not recognized")
+        
         modules = []
         modules.append(Mamba_LM_Tree_HeadModel(config.model, hidden_states=True, layer_idx = 0, logger = logger))
         for i in range(config.model.num_blocks-2):
