@@ -4,11 +4,22 @@
 
 ## What is Phyla? 
 
-Phyla is a next-generation protein language model designed to model both individual sequences and inter-sequence relationships. It leverages a hybrid state-space transformer architecture and is trained on two tasks: masked language modeling and phylogenetic tree reconstruction using sequence embeddings. Phyla enables rapid construction of meaningful phylogenetic trees of protein sequences, offering insights that differ from classical methods in potentially functionally significant ways.
+Phyla is a protein language model designed to model both individual sequences and inter-sequence relationships. It leverages a hybrid state-space transformer architecture and is trained on two tasks: masked language modeling and phylogenetic tree reconstruction using sequence embeddings. Phyla enables rapid construction of phylogenetic trees of protein sequences, offering insights that differ from classical methods in potentially functionally significant ways.
+
+## Disclaimer
+
+We are excited to introduce Phyla-α, an early-stage version of our model that is still under active development. Future iterations will incorporate methodological improvements and additional training data as we continue refining the model. Please note that this work is ongoing, and updates will be released as progress is made.
 
 ## What is in this repo?
 
-This repo provides a way to perform inference with the Phyla model for your application. After performing the steps you will be able to give Phyla a fasta file and quickly get a phylogenetic tree. We are working on providing training code as well.
+This repo provides a way to perform inference with the Phyla-α model for your application. After performing the steps you will be able to give Phyla a fasta file and quickly get a phylogenetic tree. We are working on providing training code as well.
+
+
+| Shorthand | Name in code           | Dataset | Description  |
+|-----------|-----------------------------|---------|--------------|
+| Phyla-α    | `phyla-alpha`       | 13,696 trees from OpenProteinSet  | Alpha release of Phyla meant as a proof of concept of ongoing work. |
+| Phyla-β   | `phyla-beta`         | Full OpenProteinSet | Verion 2 of Phyla set to release in April after some methodological improvements and longer training. |
+
 
 ## Getting started with Phyla
 
