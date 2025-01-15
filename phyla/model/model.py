@@ -361,9 +361,9 @@ class Phyla(nn.Module):
     def load(self):
         if 'weights' not in os.listdir():
             os.mkdir('weights')
-            os.system("wget https://zenodo.org/records/14618137/files/epoch%3D0-step%3D10000_state_dict.pt -P weights")
+            os.system("wget https://zenodo.org/records/14657163/files/phyla_alpha_291M_state_dict.pt -P weights")
 
-        path_to_checkpoint = "weights/epoch=0-step=10000_state_dict.pt"
+        path_to_checkpoint = "weights/phyla_alpha_291M_state_dict.pt"
         state_dict = torch.load(path_to_checkpoint)
         #remove _forward_module from each of the keys of state_dict then use that to load the model
         new_state_dict = {}
