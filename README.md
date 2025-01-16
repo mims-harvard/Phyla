@@ -51,9 +51,8 @@ Run "run_phyla_test.py" and if you get a tree printed out then everything is set
 
 Once that is done just replace the fasta file in the run_phyla_test script to the fasta file with the protein sequences that you want to align and it will generate a tree.
 
-## Some considerations
+## System Requirements and Scalability 
 
-I have run this script on a H100 Nvidia-GPU, I believe it should work on a 32 GB V100 as well. The more memory you have in the GPU the larger the number of sequences you can generate trees for. 
-To reconstruct the tree of life with 3,084 sequences, I had to run Phyla on cpus with ~1TB of memory. If you have an interest in running Phyla on a cpu to be able to run more sequences, raise an issue and we can add that functionality.
+This script has been tested on an H100 Nvidia GPU and is expected to work on a 32 GB V100 as well. Greater GPU memory capacity allows for generating trees for a larger number of sequences. Reconstructing the tree of life with 3,084 sequences required running Phyla on CPUs with approximately 1 TB of memory. For those interested in running Phyla on a CPU to handle more sequences, raising an issue will help prioritize the addition of that functionality.
 
    
