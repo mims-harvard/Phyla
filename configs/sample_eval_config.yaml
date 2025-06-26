@@ -1,0 +1,53 @@
+trainer: {
+lr: 0.0001,
+record: True,
+epochs: 25000,
+epochs_callback: 5,
+steps_callback: 1000,
+scheduler: "warmup",
+num_warmup_steps: 150,
+ddp: False,
+deepspeed: False,
+use_tree_loss: True,
+use_mlm_loss: False,
+resume: False,
+symmetry_loss: 1,
+save_path: "",
+model_type: "Phyla-beta",
+#model_type: "ESM2",
+run_name: "",
+checkpoint_path: "/home/unix/yektefai/phyla_work/PhylaNeurips/weights/11564369",
+checkpoint_id: 620
+} 
+
+dataset: {
+#dataset: "GTB",
+#dataset: 'GTB'
+dataset: "protein_gym"
+}
+
+model: {
+  d_model: 256,
+  n_layer: 16,
+  vocab_size: 24,
+  ssm_cfg: {},
+  rms_norm: True,
+  residual_in_fp32: True,
+  fused_add_norm: True,
+  pad_vocab_size_multiple: 8,
+  num_blocks: 10,
+  model_name: 'Phyla-beta',
+  calculation_method: "attention",
+  inject_rotary_attention: False,
+  positional_embeddings: False,
+  bidirectional: True,
+  bidirectional_strategy: "add",
+  bidirectional_weight_tie: True,
+  ranking_loss: False
+}
+
+eval: {
+  random: False, 
+  device: "cuda:5"
+
+}
