@@ -1,16 +1,49 @@
 from phyla import phyla
+import pandas as pd
 import torch
 from tqdm import tqdm
 import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import gc
+import yaml
+import glob
 
-num_files = 92
-sequence_length = 4_500_000
-chunk_size = 500
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+
+fasta_file_path = config.get("fasta_file_path", "")
+df= pd.read_csv(config.get("metadata_file_path", ""), sep="\t")
+chunk_size = config.get("chunk_size", 500)
+fasta_files = glob.glob(os.path.join(fasta_file_path, "**", "*.fasta"), recursive=True)
+
+import pdb; pdb.set_trace()
+
+id_to_sequence = {}
+sequence_length = 0
+for fasta_file in fasta_files:
+    with open(fasta_file, "r") as file:
+        lines = file.readlines()
+        sequence = "".join([line.strip() for line in lines if not line.startswith(">")])
+        id_to_sequence[fasta_file.split('.')[0]] = sequence
+        sequence_length = max(sequence_length, len(sequence))
+
+id_sequence_chunk = {}
+for id in id_to_sequence:
+    for chunk_id in range(0, sequence_length//chunk_size + 1)
+
+id_to_lineage = {}
+for id in id_to_sequence:
+    if id in df['SampleID']:
+        lineage_value = df.loc[df['SampleID'] == id, 'PrimaryLineage'].values[0]
+        id_to_lineage[id] = lineage_value
+    else:
+        import pdb; pdb.set_trace()
+
+num_files = len(fasta_files)
+sequences = []
+
 output_sum = None
 num_outputs = 0
-
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 model = phyla(name='phyla-alpha').load().cuda()
 model.eval()
