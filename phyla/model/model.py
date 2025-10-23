@@ -268,7 +268,7 @@ class MixerModel(nn.Module):
     #         hidden_states = seq_reps
     def forward(self, input_ids, inference_params=None, position_ids = None, hidden_states_given = False):
         if hidden_states_given is False:
-            hidden_states = self.embedding(input_ids.cuda()) # TODO: Comment out for big model evaluation
+            hidden_states = self.embedding(input_ids) # TODO: Comment out for big model evaluation
             # hidden_states = self.embedding(input_ids)
             if self.positional_embeddings and position_ids is not None:
                 hidden_states = self.positional_embeddings(hidden_states, position_ids)
@@ -327,23 +327,34 @@ class Phyla(nn.Module):
                                    "S": 15, "T": 16, "W": 17, "Y": 18, "V": 19}
 
 
-    def __init__(self, config_path=None, logger = None, name=None, deepspeed = False):
+    def __init__(self, config_path=None, logger = None, name=None, deepspeed = False, device = None):
         super().__init__()
 
         if name is None:
             raise Exception("No name provided must provide a model name, see README for available names")
-        elif name == 'phyla-alpha':
+        elif name.lower() == 'phyla-alpha' or name.lower() == 'phyla-beta':
+            self.version = name.lower()
             config = Config()
             if config_path: 
                 config = load_config(config_path)
+            if name.lower() == 'phyla-beta':
+                config.model.num_blocks = 3
+                config.model.bidirectional = True
+                config.model.bidirectional_strategy = "add"
+                config.model.bidirectional_weight_tie = True
         else:
             raise Exception(f"Name {name} not recognized")
         
+        if device is None:
+            self.device = torch.device('cuda:0')
+        else:
+            self.device = torch.device(device)
+        
         modules = []
-        modules.append(Mamba_LM_Tree_HeadModel(config.model, hidden_states=True, layer_idx = 0, logger = logger))
+        modules.append(Mamba_LM_Tree_HeadModel(config.model, hidden_states=True, layer_idx = 0, logger = logger, device = self.device))
         for i in range(config.model.num_blocks-2):
-            modules.append(Mamba_LM_Tree_HeadModel(config.model, hidden_states=True, layer_idx= i+1, logger=logger))
-        modules.append(Mamba_LM_Tree_HeadModel(config.model, layer_idx= i+1, logger = logger))
+            modules.append(Mamba_LM_Tree_HeadModel(config.model, hidden_states=True, layer_idx= i+1, logger=logger, device = self.device))
+        modules.append(Mamba_LM_Tree_HeadModel(config.model, layer_idx= i+1, logger = logger, device = self.device))
 
         num_blocks = len(modules)
         self.modul = nn.ModuleList(modules)
@@ -361,18 +372,29 @@ class Phyla(nn.Module):
         self.deepspeed = deepspeed
     
     def load(self):
-        if 'weights' not in os.listdir():
-            os.mkdir('weights')
-            os.system("wget https://zenodo.org/records/14657163/files/phyla_alpha_291M_state_dict.pt -P weights")
+        if self.version == 'phyla-alpha':
+            if 'weights' not in os.listdir():
+                os.mkdir('weights')
+                os.system("wget https://zenodo.org/records/14657163/files/phyla_alpha_291M_state_dict.pt -P weights")
 
-        path_to_checkpoint = "weights/phyla_alpha_291M_state_dict.pt"
-        state_dict = torch.load(path_to_checkpoint)
-        #remove _forward_module from each of the keys of state_dict then use that to load the model
-        new_state_dict = {}
-        for key in state_dict.keys():
-            new_state_dict[key.replace("_forward_module.model.", "")] = state_dict[key]
+            path_to_checkpoint = "weights/phyla_alpha_291M_state_dict.pt"
+            state_dict = torch.load(path_to_checkpoint, map_location = self.device)
 
-        self.load_state_dict(new_state_dict)
+            new_state_dict = {}
+            for key in state_dict.keys():
+                new_state_dict[key.replace("_forward_module.model.", "")] = state_dict[key]
+
+        elif self.version == 'phyla-beta':
+            if 'weights' not in os.listdir():
+                os.mkdir('weights')
+                os.system("wget https://dataverse.harvard.edu/api/access/datafile/11564369 -P weights")
+
+            path_to_checkpoint = "weights/11564369"
+            state_dict = torch.load(path_to_checkpoint, map_location = self.device)['state_dict']
+            new_state_dict = {k.replace('model.',''):v for k,v in state_dict.items()}
+        
+        self.load_state_dict(new_state_dict, strict=True)
+        self.to(self.device)
         return self
     
     def redistribute_layers(self):
@@ -393,11 +415,11 @@ class Phyla(nn.Module):
     def forward(self, x, sequence_mask, cls_token_mask, logits=False):
         final_output_logits = logits
         
-        x = self.modul[0](x.to(f'cuda:{self.gpu_count}'), 
+        x = self.modul[0](x.to(self.device), 
                         logits = False, 
                         position_ids = None, 
-                        sequence_mask = sequence_mask.to(f'cuda:{self.gpu_count}'),
-                        cls_token_mask = cls_token_mask.to(f'cuda:{self.gpu_count}'))  
+                        sequence_mask = sequence_mask.to(self.device),
+                        cls_token_mask = cls_token_mask.to(self.device))  
     
         for module in self.modul[1:-1]:
             correct_device = next(module.parameters()).device
@@ -426,6 +448,8 @@ class Phyla(nn.Module):
         From scikit-bio docs: https://scikit.bio/docs/latest/generated/skbio.tree.nj.html#skbio.tree.nj
         """
         distance_matrix = torch.cdist(sequence_embeddings, sequence_embeddings, compute_mode='donot_use_mm_for_euclid_dist').cpu().detach().numpy()[0]
+        if distance_matrix.dtype != float:
+            distance_matrix = distance_matrix.astype(float)
         # Reconstruct tree using scikit bio
         dm = DistanceMatrix(distance_matrix, sequence_names)
         tree = nj(dm)
@@ -581,7 +605,7 @@ class Mamba_LM_Tree_HeadModel(nn.Module, GenerationMixin):
                 finally:
                     torch.distributed.all_reduce(model_error_tensor)
                     if model_error_tensor[0] > 0:
-                        self.logger_.log(f"Ooops someone had a OOM we should scuttle", level=logging.INFO)
+                        self.logger_.log("Ooops someone had a OOM we should scuttle", level=logging.INFO)
                         failed = True
                 
                 if failed:
@@ -653,13 +677,13 @@ class Mamba_LM_Tree_HeadModel(nn.Module, GenerationMixin):
                     finally:
                         torch.distributed.all_reduce(error_tensor)
                         if error_tensor[0] > 0:
-                            self.logger_.log(f"Ooops someone had a OOM we should scuttle", level=logging.INFO)
+                            self.logger_.log("Ooops someone had a OOM we should scuttle", level=logging.INFO)
                             failed = True
                     
                     if failed:
                         return None
                 else:
-                    sequence_rep, weights = self.tree_head(sequence_rep.cuda(), memory_rep.cuda(), memory_rep.cuda(), attn_mask = x.cuda() ) # TODO: Comment out for big model evaluation
+                    sequence_rep, weights = self.tree_head(sequence_rep, memory_rep, memory_rep, attn_mask = x) # TODO: Comment out for big model evaluation
                     # sequence_rep, weights = self.sequence_head(sequence_rep.cuda(), sequence_rep.cuda(), sequence_rep.cuda())
 
                     # sequence_rep, weights = self.tree_head(sequence_rep, memory_rep, memory_rep, attn_mask = x)
