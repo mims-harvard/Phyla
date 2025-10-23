@@ -8,7 +8,7 @@ import gc
 import yaml
 import glob
 
-with open("config.yaml", "r") as file:
+with open("tb_analysis/config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 fasta_file_path = config.get("fasta_file_path", "")
@@ -29,7 +29,12 @@ for fasta_file in fasta_files:
 
 id_sequence_chunk = {}
 for id in id_to_sequence:
-    for chunk_id in range(0, sequence_length//chunk_size + 1)
+    seq_len = len(id_to_sequence[id])
+    for chunk_id in range(0, (seq_len + chunk_size - 1) // chunk_size):
+        start = chunk_id * chunk_size
+        end = min(start + chunk_size, seq_len)
+        chunk_seq = id_to_sequence[id][start:end]
+        id_sequence_chunk[(id, chunk_id)] = chunk_seq.ljust(chunk_size, 'N')
 
 id_to_lineage = {}
 for id in id_to_sequence:
@@ -45,32 +50,15 @@ sequences = []
 output_sum = None
 num_outputs = 0
 
-model = phyla(name='phyla-alpha').load().cuda()
+model = phyla(name='phyla-beta').load().cuda()
 model.eval()
-
-input_dir = "/n/holylfs06/LABS/mzitnik_lab/Lab/phyla_data_share/tb_data/assemblies" # there are 92 fasta files in this directory
-concats = [[] for _ in range(sequence_length // chunk_size)] # the ith element in this list is a list of the ith chunks from all files
-
-print(f"Reading files in and loading lists...")
-file_count = 0
-for filename in tqdm(os.listdir(input_dir)):
-    if filename.endswith(".fasta"):
-        filepath = os.path.join(input_dir, filename)
-        with open(filepath, "r") as file:
-            lines = file.readlines()
-        
-        sequence = "".join([line.strip() for line in lines if not line.startswith(">")])
-        for i in range(sequence_length // chunk_size):
-            string_to_add = sequence[i * chunk_size:(i + 1) * chunk_size].ljust(chunk_size)
-            concats[i].append(string_to_add)
-        
-        file_count += 1
-        if file_count >= num_files:
-            break
 
 print("Running inference on each concatenation of chunks...")
 for i in tqdm(range(sequence_length // chunk_size)):
     with torch.no_grad():
+        concats = []
+        for id in id_to_sequence:
+            concats.append(id_sequence_chunk[(id, i)])
         encoded_aa, cls_token_mask, sequence_mask, sequence_names = model.encode(concats[i], None)
         preds = model(encoded_aa, sequence_mask, cls_token_mask)
 
@@ -80,20 +68,9 @@ for i in tqdm(range(sequence_length // chunk_size)):
         output_sum += preds
     num_outputs += 1
 
-    # if 'all_outputs' not in globals():
-    #     all_outputs = []
-    # all_outputs.append(preds.cpu())
-
     del encoded_aa, cls_token_mask, sequence_mask, sequence_names, preds
     gc.collect()
     torch.cuda.empty_cache()
-
-
-# final_embeddings = torch.cat(all_outputs, dim=0) 
-
-# # Save to file
-# torch.save(final_embeddings, "embeddings.pt")
-# print(f"Saved embeddings with shape: {final_embeddings.shape}")
 
 final_output = output_sum / num_outputs
 final_output = final_output.cpu()
