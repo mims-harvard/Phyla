@@ -12,23 +12,21 @@ with open("tb_analysis/config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 fasta_file_path = config.get("fasta_file_path", "")
-df= pd.read_csv(config.get("metadata_file_path", ""), sep="\t")
+df = pd.read_csv(config.get("metadata_file_path", ""), sep="\t")
 chunk_size = config.get("chunk_size", 500)
 fasta_files = glob.glob(os.path.join(fasta_file_path, "**", "*.fasta"), recursive=True)
 
-import pdb; pdb.set_trace()
-
 id_to_sequence = {}
 sequence_length = 0
-for fasta_file in fasta_files:
+for fasta_file in tqdm(fasta_files, total=len(fasta_files), desc="Reading FASTA files"):
     with open(fasta_file, "r") as file:
         lines = file.readlines()
         sequence = "".join([line.strip() for line in lines if not line.startswith(">")])
-        id_to_sequence[fasta_file.split('.')[0]] = sequence
+        id_to_sequence[fasta_file.split('/')[-1].split('.')[0]] = sequence
         sequence_length = max(sequence_length, len(sequence))
 
 id_sequence_chunk = {}
-for id in id_to_sequence:
+for id in tqdm(id_to_sequence, total=len(id_to_sequence), desc="Chunking sequences"):
     seq_len = len(id_to_sequence[id])
     for chunk_id in range(0, (seq_len + chunk_size - 1) // chunk_size):
         start = chunk_id * chunk_size
@@ -38,10 +36,11 @@ for id in id_to_sequence:
 
 id_to_lineage = {}
 for id in id_to_sequence:
-    if id in df['SampleID']:
+    if id in df['SampleID'].values:
         lineage_value = df.loc[df['SampleID'] == id, 'PrimaryLineage'].values[0]
         id_to_lineage[id] = lineage_value
     else:
+        print(f"Warning: {id} not found in metadata.")
         import pdb; pdb.set_trace()
 
 num_files = len(fasta_files)
@@ -49,7 +48,7 @@ sequences = []
 
 output_sum = None
 num_outputs = 0
-
+import pdb; pdb.set_trace()
 model = phyla(name='phyla-beta').load().cuda()
 model.eval()
 
