@@ -48,7 +48,6 @@ sequences = []
 
 output_sum = None
 num_outputs = 0
-import pdb; pdb.set_trace()
 model = phyla(name='phyla-beta').load().cuda()
 model.eval()
 
@@ -58,8 +57,8 @@ for i in tqdm(range(sequence_length // chunk_size)):
         concats = []
         for id in id_to_sequence:
             concats.append(id_sequence_chunk[(id, i)])
-        encoded_aa, cls_token_mask, sequence_mask, sequence_names = model.encode(concats[i], None)
-        preds = model(encoded_aa, sequence_mask, cls_token_mask)
+        encoded_aa, cls_token_mask, sequence_mask, sequence_names = model.encode(concats, None)
+        preds = model(encoded_aa.cuda(), sequence_mask.cuda(), cls_token_mask.cuda())
 
     if output_sum is None:
         output_sum = preds
