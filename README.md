@@ -1,10 +1,13 @@
-# Phyla: Towards a Foundation Model for Phylogenetic Inference
+# Phyla
 
 ![Tree of life](img/16S_sequences.png)
+> **Evolutionary Reasoning Does Not Arise in Standard Usage of Protein Language Models**\
+> Yasha Ektefaie*, Andrew Shen*, Lavik Jain, Maha Farhat, Marinka Zitnik\
+> Paper: https://www.biorxiv.org/content/10.1101/2025.01.17.633626v3
 
 ## What is Phyla? 
 
-Phyla is a protein language model designed to model both individual sequences and inter-sequence relationships. It leverages a hybrid state-space transformer architecture and is trained on two tasks: masked language modeling and phylogenetic tree reconstruction using sequence embeddings. Phyla enables rapid construction of phylogenetic trees of protein sequences, offering insights that differ from classical methods in potentially functionally significant ways.
+Phyla is a protein language model designed to model both intra-sequence and inter-sequence relationships. It leverages a hybrid state-space transformer architecture and is trained with a tree-based loss function. Phyla enables rapid construction of phylogenetic trees using protein sequences, offering insights that differ from classical methods in potentially functionally significant ways.
 
 ## Disclaimer
 
@@ -198,3 +201,14 @@ Set the GPU device to use (e.g., `"cuda:0"`, `"cuda:5"`).
 Set this to `true` to evaluate a randomly initialized model (default is `false`).
 
    
+## Citation
+
+If you find the Phyla paper or codebase useful, please cite our work!
+```
+@inproceedings{phyla,
+  title={Evolutionary Reasoning Does Not Arise in Standard Usage of Protein Language Models},
+  author={Yasha Ektefaie and Andrew Shen and Lavik Jain and Maha Farhat and Marinka Zitnik},
+  booktitle={NeurIPS},
+  year={2025}
+}
+```
