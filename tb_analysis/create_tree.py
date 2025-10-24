@@ -21,6 +21,13 @@ def get_newick(node, parent_dist, leaf_names, newick=''):
         newick = f"({newick}"
         return newick
 
+with open("tb_analysis/config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+
+fasta_file_path = config.get("fasta_file_path", "")
+metadata = pd.read_csv(config.get("metadata_file_path", ""), sep="\t")
+
+
 # Load embeddings
 embeddings = torch.load('averaged_embeddings.pt')
 if embeddings.dim() == 3:
@@ -80,3 +87,16 @@ newick = get_newick(tree, tree.dist, labels)
 # Save Newick tree to file
 with open('tree.newick', 'w') as f:
     f.write(newick)
+
+
+num_to_color = {}
+
+num = 0
+x = open('lineage_colors.txt', 'w')
+x.write('ID\tColor\n')
+for lineage, color in lineage_to_color.items():
+    num_to_color[num] = color
+    num += 1
+
+    x.write(f"{lineage}\t{color}\n")
+x.close()
