@@ -183,8 +183,7 @@ class OpenFold_Dataset(pl.LightningDataModule):
                  sub_tree_size, 
                  max_subtree_size_scaler, 
                  logger, 
-                 dataset_size,
-                 deepspeed = False,):
+                 dataset_size):
         
         super().__init__()
         self.dataset_directories = dataset_directories
@@ -193,7 +192,6 @@ class OpenFold_Dataset(pl.LightningDataModule):
         self.dataset_size = dataset_size
         self.adaptive_batch_size = adaptive_batch_size
         self.max_subtree_size_scaler = max_subtree_size_scaler
-        self.deepspeed = deepspeed
         self.size_detector = SizeDetector()
 
         self.minimum_tree = 10
@@ -516,8 +514,6 @@ class OpenFold_Dataset(pl.LightningDataModule):
             self.logger.log(f"Adaptive batch size dictates {number_sub_tree} subtrees can fit on GPU", level=logging.INFO)
             for i in range(1, number_sub_tree):
                 batch.append(self.__getitem__(tree, preset_subtree_size = sub_tree_size))
-        if self.deepspeed:
-            torch.distributed.barrier()
 
         tree_indices = []
         for tree in batch:
@@ -594,10 +590,7 @@ class OpenFold_Dataset(pl.LightningDataModule):
             for j in i:
                 if j not in flat_tree_labels:
                     flat_tree_labels.append(j)
-
-        if self.deepspeed:
-            torch.distributed.barrier()
-
+                    
         return final_batch
 
     def train_dataloader(self):
