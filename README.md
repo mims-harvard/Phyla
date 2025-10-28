@@ -159,7 +159,7 @@ This tree-based propagation strategy yields the best Spearman correlation for Ph
 To evaluate tree reconstruction, taxonomic clustering, or functional prediction, run:
 
 ```bash
-python -m eval.evo_reasoning_eval configs/sample_eval_config.yaml
+python -m phyla.eval.evo_reasoning_eval configs/sample_eval_config.yaml
 ```
 
 ### Modifying the Config

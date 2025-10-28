@@ -11,7 +11,6 @@ import torch.distributed
 from skbio import DistanceMatrix
 from skbio.tree import nj
 from utils.utils import  batched_quartet_loss, reconstruct_tree, rf_distance
-from eval import mod_tree_builder
 import random
 import gc
 from scipy.stats import rankdata
@@ -20,6 +19,7 @@ import torch
 import random
 import math
 from itertools import combinations
+from eval.evo_reasoning_eval import tree_reconstruction_benchmark
 
 class TrainingModule(LightningModule):
 	def __init__(
@@ -332,7 +332,7 @@ class TrainingModule(LightningModule):
 		output_file = None
 
 		for dataset in ["treefam", "treebase"]:
-			normrfs, tree_sizes = mod_tree_builder.generate_tier1_results(models, num_datasets, output_file, dataset, esm_training_mode = self.esm)
+			normrfs, tree_sizes = tree_reconstruction_benchmark(models, num_datasets, output_file, dataset)
 			normrfs = [i for i in normrfs if i is not None]
 			avg_normrf = sum(normrfs)/len(normrfs)
 			if dataset == "treefam":
