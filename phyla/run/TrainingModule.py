@@ -259,59 +259,59 @@ class TrainingModule(LightningModule):
 				else:
 					raise e
 
-	if not failed and logs is not None:
-		for k, v in logs.items():        
-			self.log(
-						k, v.to("cuda"), on_step=True, on_epoch=False, prog_bar=True, logger=True,
-						sync_dist=True
-						)
+		if not failed and logs is not None:
+			for k, v in logs.items():        
+				self.log(
+							k, v.to("cuda"), on_step=True, on_epoch=False, prog_bar=True, logger=True,
+							sync_dist=True
+							)
 
-		index, sub_tree_size, num_subtrees = self.dataset.chosen_tree
-		lr = opt.optimizer.param_groups[0]["lr"]
-		self.log('num_seq_per_subtree', sub_tree_size)
-		logs['num_seq_per_subtree'] = sub_tree_size
-		self.log('num_subtrees', num_subtrees)
-		logs['num_subtrees'] = num_subtrees
-		self.log('lr', lr)
-		logs['lr'] = lr
-		self.logger_.log(logs, level=logging.INFO)
+			index, sub_tree_size, num_subtrees = self.dataset.chosen_tree
+			lr = opt.optimizer.param_groups[0]["lr"]
+			self.log('num_seq_per_subtree', sub_tree_size)
+			logs['num_seq_per_subtree'] = sub_tree_size
+			self.log('num_subtrees', num_subtrees)
+			logs['num_subtrees'] = num_subtrees
+			self.log('lr', lr)
+			logs['lr'] = lr
+			self.logger_.log(logs, level=logging.INFO)
 
-	if logs is not None:
-		if self.record:
-			wandb.log(logs, step=self.global_step)
+		if logs is not None:
+			if self.record:
+				wandb.log(logs, step=self.global_step)
 
-		self.clip_gradients(
-			opt,
-			gradient_clip_val=1.0,             # tighten / loosen here
-			gradient_clip_algorithm="norm"
-		)
+			self.clip_gradients(
+				opt,
+				gradient_clip_val=1.0,             # tighten / loosen here
+				gradient_clip_algorithm="norm"
+			)
 
-		self.current_step_value += 1
-		opt.step()
+			self.current_step_value += 1
+			opt.step()
 
-		# Perform learning rate schedling
-		if self.lr_scheduler == "cosine":
-			sch1 = self.lr_schedulers()
-			sch1.step()
-		elif self.lr_scheduler == "cosine_warmup":
-			sch1, sch2 = self.lr_schedulers()
-			# Perform warmup
-			if self.num_warmup_steps > 0:
+			# Perform learning rate schedling
+			if self.lr_scheduler == "cosine":
+				sch1 = self.lr_schedulers()
 				sch1.step()
-				self.num_warmup_steps -= 1
-			# Perform cosine annealing
-			else:
-				sch2.step()
-		elif self.lr_scheduler == "warmup":
-			sch1 = self.lr_schedulers()
-			# Perform warmup
-			if self.num_warmup_steps > 0:
-				sch1.step()
-				self.num_warmup_steps -= 1
+			elif self.lr_scheduler == "cosine_warmup":
+				sch1, sch2 = self.lr_schedulers()
+				# Perform warmup
+				if self.num_warmup_steps > 0:
+					sch1.step()
+					self.num_warmup_steps -= 1
+				# Perform cosine annealing
+				else:
+					sch2.step()
+			elif self.lr_scheduler == "warmup":
+				sch1 = self.lr_schedulers()
+				# Perform warmup
+				if self.num_warmup_steps > 0:
+					sch1.step()
+					self.num_warmup_steps -= 1
 
-		return logs['loss']
-	else:
-		return torch.tensor(0)
+			return logs['loss']
+		else:
+			return torch.tensor(0)
 
 	def testing_step(self, batch, _):
 		pass

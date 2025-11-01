@@ -20,7 +20,7 @@ except ImportError:
     RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
 
 import logging
-from ..utils.utils import load_config
+from utils.utils import load_config
 from skbio import DistanceMatrix
 from skbio.tree import nj
 

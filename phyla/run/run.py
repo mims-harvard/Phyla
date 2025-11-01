@@ -1,9 +1,11 @@
-from dataset.data import Protein_Dataset, OpenFold_Dataset
+from dataset.data import OpenFold_Dataset
 from model.model import  Phyla
 import torch
 from utils.utils import load_config
 from pytorch_lightning import Trainer
 import pytorch_lightning as pl
+from run.TrainingModule import TrainingModule
+
 
 pl.seed_everything(42) 
 
@@ -17,6 +19,8 @@ class DatasetConfig():
     adaptive_batch_size: bool = False
     max_subtree_size_scaler: int = 1
     new_construction: bool = False
+    dataset_directories: str = '/path/to/your/data'
+    dataset_size: int = None
 
 class Mamba_ModelConfig():
     d_model: int = 256
@@ -48,7 +52,14 @@ Run this script using "python3 -m run.run configs/config.yaml" while in the home
 """
 def train_phyloLLM(config):
 
-    # data = #Some data converter for the model
+    dparam = {
+        "dataset_directories": config.dataset.data_path,
+        "logger": logger,
+        "dataset_size": config.dataset.dataset_size,
+    }
+
+    data = OpenFold_Dataset(**dparam)
+    import pdb; pdb.set_trace()
 
     model = Phyla(config)
 

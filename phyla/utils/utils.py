@@ -1,3 +1,5 @@
+import torch 
+
 def load_config(Config):
     #Only handles one nested level of config and assumes one nested level
     config = Config()

@@ -178,20 +178,12 @@ class SizeDetector():
 
 class OpenFold_Dataset(pl.LightningDataModule):
     def __init__(self, dataset_directories, 
-                    cleaned_openfold_dataset_directory,
-                 batch_size, 
-                 sub_tree_size, 
-                 max_subtree_size_scaler, 
                  logger, 
-                 dataset_size):
+                 dataset_size = None):
         
         super().__init__()
         self.dataset_directories = dataset_directories
-        self.batch_size = batch_size
-        self.sub_tree_size = sub_tree_size
         self.dataset_size = dataset_size
-        self.adaptive_batch_size = adaptive_batch_size
-        self.max_subtree_size_scaler = max_subtree_size_scaler
         self.size_detector = SizeDetector()
 
         self.minimum_tree = 10
@@ -234,7 +226,7 @@ class OpenFold_Dataset(pl.LightningDataModule):
                     else:
                         file_mapping[name] = [f'{directory}/{i}']
 
-                if num_completed == self.dataset_size:
+                if self.dataset_size is None and num_completed == self.dataset_size:
                     to_return = {}
                     for key in file_mapping:
                         if len(file_mapping[key]) == 2:
@@ -407,7 +399,6 @@ class OpenFold_Dataset(pl.LightningDataModule):
         else:
             max_sub_tree_size = self.size_detector.return_subtree_size(self.return_max_length(self.name_to_seq))
             # For larger model
-            max_sub_tree_size = max_sub_tree_size//self.max_subtree_size_scaler
             num_sequences = len(self.name_to_seq)
             if num_sequences <= self.minimum_tree:
                 sub_tree_size = num_sequences
@@ -594,18 +585,11 @@ class OpenFold_Dataset(pl.LightningDataModule):
         return final_batch
 
     def train_dataloader(self):
-        if self.msa_distance:
-            return DataLoader(self,
-                              num_workers = 0,
-                              batch_size=self.batch_size,
-                              collate_fn=self.collate_fn,
-                              sampler  = OpenFold_TreeSampler(self.dataset_directories, self.dataset_size, pulled_trees=list(self.tree_map.keys())))
-        else:
-            return DataLoader(self,
+        return DataLoader(self,
                             num_workers = 0,
-                            batch_size=self.batch_size,
+                            batch_size=1,
                             collate_fn=self.collate_fn,
-                            sampler  = OpenFold_TreeSampler(self.dataset_directories, self.dataset_size))
+                            sampler  = OpenFold_TreeSampler(self.dataset_directories, self.dataset_size, pulled_trees=list(self.tree_map.keys())))
 
     def val_dataloader(self):
         # Define a dummy dataset with one batch
