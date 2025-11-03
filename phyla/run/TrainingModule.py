@@ -28,7 +28,6 @@ class TrainingModule(LightningModule):
 		lr = 1e-4,
 		record = False,
 		epochs = 5000,
-		calculation_method = 'average',
 		lr_scheduler = 'default',
 		num_annealing_steps = 10000,
 		num_warmup_steps = 1000,
@@ -41,11 +40,10 @@ class TrainingModule(LightningModule):
 		self.model = model
 		self.lr = lr
 		self.record = record
-		self.model_name = mode
+		self.model_name = model
 		self.epochs = epochs
 		self.warmup_steps = 400
 		self.current_step_value = 0
-		self.calculation_method = calculation_method
 		self.lr_scheduler = lr_scheduler
 		self.num_annealing_steps = num_annealing_steps
 		self.num_warmup_steps = num_warmup_steps
@@ -61,15 +59,13 @@ class TrainingModule(LightningModule):
 	def forward(
 		self,
 		batch,
-		mem,
 		logits = False,
 		cls_token_mask = False,
-		position_ids = None,
 		sequence_mask = None,
 		cache = None
 	):
 
-		self.model(batch, logits = logits, position_ids = position_ids, 
+		return self.model(batch, logits = logits,
 					 cls_token_mask = cls_token_mask,
 					 sequence_mask = sequence_mask)
 
@@ -80,7 +76,6 @@ class TrainingModule(LightningModule):
 	def get_sequence_embeddings(self, encoded_sequences, cls_positions, sequence_mask):
 		return self.forward(encoded_sequences, None, logits = False, 
 											cls_token_mask = cls_positions.bool(), 
-											position_ids = None,
 											sequence_mask  = sequence_mask)
 
 	def compute_rf_distance(self, pairwise_distances, tree_matrix, tree_labels):
@@ -108,7 +103,6 @@ class TrainingModule(LightningModule):
 		logs = {}
 		if self.use_mlm_loss:
 			logits = self.forward(batch['masked_sequences'].cuda(), None, logits = True, 
-						position_ids = None,
 						sequence_mask  = batch['sequence_mask'].cuda(), 
 						cls_token_mask = batch['cls_positions'].bool().cuda())
 			if logits is None:
@@ -130,10 +124,8 @@ class TrainingModule(LightningModule):
 				logs['mlm_loss'] = mlm_loss
 
 			logs['mlm_accuracy'] = mlm_accuracy
-
-		sequence_representations = self.forward(batch['true_sequences'], None, logits = False, 
+		sequence_representations = self.forward(batch['true_sequences'], logits = False, 
 									cls_token_mask = batch['cls_positions'].bool(), 
-									position_ids = None,
 									sequence_mask  = batch['sequence_mask'])
 		
 		if sequence_representations is None:

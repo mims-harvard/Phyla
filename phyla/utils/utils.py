@@ -1,4 +1,71 @@
 import torch 
+import os
+import sys
+import yaml
+import torch
+import logging
+import inspect 
+from itertools import combinations
+import torch.nn.functional as F
+from skbio import DistanceMatrix
+from skbio.tree import nj
+from Bio import Phylo
+from io import StringIO
+from ete3 import Tree
+
+class CustomLogger:
+    def __init__(self, log_file, log_to_terminal=False):
+        os.makedirs("logs", exist_ok=True)
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+        
+        # File handler for logging to a file
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.DEBUG)
+        
+        # Optionally add a stream handler to log to the terminal
+        if log_to_terminal:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setLevel(logging.DEBUG)
+            self.logger.addHandler(stream_handler)
+        
+        # Formatter that includes line numbers
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        
+        # Add the file handler to the logger
+        self.logger.addHandler(file_handler)
+    
+    def log(self, message, level=logging.INFO):
+
+        frame = inspect.currentframe()
+        outer_frame = inspect.getouterframes(frame)[1]
+        file_name = outer_frame.filename
+        line_number = outer_frame.lineno
+
+        try:
+            # Modify the message to include the file name and line number
+            message = f"[Rank {torch.distributed.get_rank()}]: {message}({file_name.split('/')[-1]}:{line_number})"
+        except:
+            message = f"{message}({file_name.split('/')[-1]}:{line_number})"
+
+        # Convert the message to a string if it's a dictionary
+        if isinstance(message, dict):
+            message = json.dumps(message)  # For a JSON-like string
+            # message_str = str(message)  # Alternatively, for a simple string conversion
+        else:
+            message = message
+
+        if level == logging.DEBUG:
+            self.logger.debug(message)
+        elif level == logging.INFO:
+            self.logger.info(message)
+        elif level == logging.WARNING:
+            self.logger.warning(message)
+        elif level == logging.ERROR:
+            self.logger.error(message)
+        elif level == logging.CRITICAL:
+            self.logger.critical(message)
 
 def load_config(Config):
     #Only handles one nested level of config and assumes one nested level

@@ -1,6 +1,6 @@
 from phyla import phyla
 from utils.eval_configs import *
-from utils.config_util import load_config
+from utils.utils import load_config
 from pytorch_lightning import LightningModule
 from collections import OrderedDict
 from skbio import DistanceMatrix

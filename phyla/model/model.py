@@ -330,9 +330,8 @@ class Phyla(nn.Module):
     def __init__(self, config_path=None, logger = None, name=None, deepspeed = False, device = None):
         super().__init__()
 
-        if name is None:
-            raise Exception("No name provided must provide a model name, see README for available names")
-        elif name.lower() == 'phyla-alpha' or name.lower() == 'phyla-beta':
+        if name is not None and (name.lower() == 'phyla-alpha' or name.lower() == 'phyla-beta'):
+            # The user is using a known model, not training their own
             self.version = name.lower()
             config = Config()
             if config_path: 
@@ -342,8 +341,9 @@ class Phyla(nn.Module):
                 config.model.bidirectional = True
                 config.model.bidirectional_strategy = "add"
                 config.model.bidirectional_weight_tie = True
-        else:
-            raise Exception(f"Name {name} not recognized")
+        
+        if type(config_path) is not str and config_path is not None:
+            config = config_path
         
         if device is None:
             self.device = torch.device('cuda:0')

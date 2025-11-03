@@ -429,12 +429,8 @@ class OpenFold_Dataset(pl.LightningDataModule):
 
         for i in range(len(subtree_sequences)):
             for j in range(i, len(subtree_sequences)):
-                if not self.msa_distance:
-                    seq_i = subtree_sequences[i].replace('>', '').split(' ')[0]
-                    seq_j = subtree_sequences[j].replace('>', '').split(' ')[0]
-                else:
-                    seq_i = subtree_sequences[i]
-                    seq_j = subtree_sequences[j]
+                seq_i = subtree_sequences[i]
+                seq_j = subtree_sequences[j]
                 dm[i][j] = distance_matrix[sequences.index(seq_i), sequences.index(seq_j)]
                 dm[j][i] = dm[i][j]
                 
@@ -589,7 +585,7 @@ class OpenFold_Dataset(pl.LightningDataModule):
                             num_workers = 0,
                             batch_size=1,
                             collate_fn=self.collate_fn,
-                            sampler  = OpenFold_TreeSampler(self.dataset_directories, self.dataset_size, pulled_trees=list(self.tree_map.keys())))
+                            sampler  = OpenFold_TreeSampler(self.dataset_directories, self.dataset_size))
 
     def val_dataloader(self):
         # Define a dummy dataset with one batch
