@@ -226,7 +226,7 @@ class OpenFold_Dataset(pl.LightningDataModule):
                     else:
                         file_mapping[name] = [f'{directory}/{i}']
 
-                if self.dataset_size is None and num_completed == self.dataset_size:
+                if self.dataset_size is not None and num_completed == self.dataset_size:
                     to_return = {}
                     for key in file_mapping:
                         if len(file_mapping[key]) == 2:

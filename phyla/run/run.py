@@ -74,10 +74,9 @@ def train_phyloLLM(config):
     )
 
     trainer_args['callbacks'] = [save_callback, save_callback2] # For validation callback runs
-    import pdb; pdb.set_trace()
+
     if config.trainer.val_callback_freq != 0:
         trainer_args['val_check_interval'] = config.trainer.val_callback_freq
-        trainer_args['check_val_every_n_epoch'] = None
 
     trainer_args['accelerator'] = "gpu"
     
@@ -86,9 +85,9 @@ def train_phyloLLM(config):
     prev_checkpoint = None
 
     if not prev_checkpoint:
-        trainer.fit(model, dataset.train_dataloader())
+        trainer.fit(model, train_dataloaders = dataset.train_dataloader(), val_dataloaders = dataset.val_dataloader())
     elif prev_checkpoint:
-        trainer.fit(model, dataset.train_dataloader(), ckpt_path=prev_checkpoint)
+        trainer.fit(model, train_dataloaders = dataset.train_dataloader(), val_dataloaders = dataset.val_dataloader(), ckpt_path=prev_checkpoint)
 
 if __name__ == "__main__":
     config = load_config(Config) 

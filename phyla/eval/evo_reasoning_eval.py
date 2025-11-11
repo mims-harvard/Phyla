@@ -202,12 +202,16 @@ def generate_tree(seq_file,
 
     max_aa_dict = {"ESM2": 19532, "EVO": 62500} # Derived from papers
 
-
-    if "Phyla" in model_name:
+    if "Phyla" in model_name or 'MAMBA' in model_name or 'PHYLA' in model_name:
         with torch.no_grad():
-            sequence_embeddings = model(batch['encoded_sequences'].to(device), 
-                                        batch['sequence_mask'].to(device),
-                                        batch['cls_positions'].bool().to(device))
+            if 'TrainingModule' in str(type(model)):
+                sequence_embeddings = model(batch['encoded_sequences'].to(device), 
+                                            cls_token_mask = batch['cls_positions'].bool().to(device),
+                                            sequence_mask = batch['sequence_mask'].to(device))
+            else:
+                sequence_embeddings = model(batch['encoded_sequences'].to(device), 
+                                            batch['sequence_mask'].to(device),
+                                            batch['cls_positions'].bool().to(device))
 
     elif model_name == "ESM2" or model_name == "ESM2_3B":
 
@@ -1041,11 +1045,20 @@ def tree_reconstruction_benchmark(models, num_datasets, output_file_name, datase
     curr_dir = os.getcwd()
     if dataset_type == "treebase":
         # file_names = np.array(os.listdir(""))
+        if 'treebase_benchmark' not in os.listdir():
+            os.system("wget https://tinyurl.com/ke8pjyw7")
+            os.system("unzip ke8pjyw7")
+            os.system("rm ke8pjyw7")
         file_names = np.loadtxt("./data/treebase_datasets_1533.txt", dtype=str)
         file_names = file_names[num_datasets[0]:num_datasets[1]]
     elif (dictionary_data is not None or output_file_name == None) and dataset_type == "treefam":
+
+        if 'treefam.pickle' not in os.listdir():
+            os.system("wget https://tinyurl.com/yh78swxd")
+            os.system("mv yh78swxd treefam.pickle")
+        
         if output_file_name == None:
-            dictionary_data = pickle.load(open("", 'rb'))
+            dictionary_data = pickle.load(open("treefam.pickle", 'rb'))
             file_names = list(dictionary_data.keys())[:500]
         else:
             file_names = list(dictionary_data.keys())

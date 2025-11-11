@@ -317,7 +317,7 @@ class TrainingModule(LightningModule):
 	def validation_step(self, batch, batch_idx):
 		self.eval()
 		models = {}
-		models["MAMBA"] = {"model": self, "alphabet_tokenizer": None}
+		models["PHYLA"] = {"model": self, "alphabet_tokenizer": None}
 		last_dataset_id = 1533
 		num_datasets = [0, last_dataset_id]
 		dataset = "treebase"
