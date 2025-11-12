@@ -1,5 +1,5 @@
 trainer: {
-lr: 0.0001,
+lr: 0.00001,
 record: True,
 epochs: 25000,
 epochs_callback: 5,
