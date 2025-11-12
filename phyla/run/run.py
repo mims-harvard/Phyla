@@ -50,8 +50,7 @@ def train_phyloLLM(config):
     
     trainer_args = {}
     if config.trainer.record:
-        wandb.init(project = 'genome_llms', 
-        group = f'{run_name}')
+        wandb.init(project = 'genome_llms')
         wandb.watch(model, log_freq=100)
     
     trainer_args['max_epochs'] = config.trainer.epochs
