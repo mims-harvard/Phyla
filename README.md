@@ -197,4 +197,49 @@ Set the GPU device to use (e.g., `"cuda:0"`, `"cuda:5"`).
 
 Set this to `true` to evaluate a randomly initialized model (default is `false`).
 
-   
+# Training Instructions
+
+We have built and stress-tested a full training pipeline for Phyla to ensure reproducibility. If your environment is set up correctly, **running `run.sh` is all you need** to launch training. Run it from within the phyla directory. All training configuration lives in `configs/sample_train_config.yaml`:
+
+
+Below is an explanation of the key parameters you may want to modify when retraining Phyla.
+
+## Trainer Settings
+
+- **`trainer.lr`**  
+  Learning rate. The default value was selected via grid search and is recommended unless you are experimenting.
+
+- **`trainer.record`**  
+  Set to `True` to log training runs to Weights & Biases.
+
+- **`trainer.save_path`**  
+  Path where model checkpoints will be saved.
+
+## Dataset Settings
+
+- **`dataset.dataset_directories`**  
+  A list of directories containing the cleaned OpenProteinSet trees.  
+  To train Phyla-β, download the cleaned dataset (~396 MB) from the Harvard Dataverse:  
+  https://dataverse.harvard.edu/api/access/datafile/13167774
+
+- **`dataset.dataset_size`**  
+  Number of trees to use for training.  
+  Set to `None` to train on the full dataset.
+
+## Model Settings
+
+- **`model.d_model`**  
+  Dimensionality of the model’s hidden representations.
+
+- **`model.n_layers`**  
+  Number of Bi-Mamba layers inside each Phyla block.
+
+- **`model.num_blocks`**  
+  Number of Phyla blocks.  
+  Each block consists of `n_layers` Bi-Mamba layers followed by a sparsified attention layer.
+
+
+
+
+
+
