@@ -12,19 +12,18 @@ use_quartet_loss: True,
 use_mlm_loss: False,
 resume: False,
 symmetry_loss: 1,
-save_path: "/n/holylfs06/LABS/mzitnik_lab/Users/yektefaie/Phyla/phyla/checkpoints/",
+save_path: "Phyla/phyla/checkpoints/",
 model_type: "Phyla-beta",
 #model_type: "ESM2",
 run_name: "test",
-checkpoint_path: "/home/unix/yektefai/phyla_work/PhylaNeurips/weights/11564369",
-checkpoint_id: 620,
+checkpoint_path: None,
 val_callback_freq: 50
 } 
 
 dataset: {
 #dataset: "GTB",
 #dataset: 'GTB'
-dataset_directories: ["/n/netscratch/mzitnik_lab/Lab/yektefaie/Cleaned_Open_Protein_Set"],
+dataset_directories: ["yektefaie/Cleaned_Open_Protein_Set"],
 dataset_size: None,
 max_subtree_size_scaler: 1.0,
 # dataset: "protein_gym"

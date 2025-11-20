@@ -16,12 +16,12 @@ save_path: "",
 model_type: "Phyla-beta",
 #model_type: "ESM2",
 run_name: "",
-checkpoint_path: "/n/holylfs06/LABS/mzitnik_lab/Users/yektefaie/Phyla/phyla/checkpoints/epoch=00-step=003000-treefam_avg_normrf=0.6787.ckpt",
+checkpoint_path: "Phyla/phyla/checkpoints/epoch=00-step=003000-treefam_avg_normrf=0.6787.ckpt",
 } 
 
 dataset: {
 #dataset: "GTB",
-dataset: 'treebase'
+dataset: 'treefam'
 #dataset: "protein_gym"
 }
 
