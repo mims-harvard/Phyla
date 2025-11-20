@@ -2,6 +2,24 @@
 
 ![Tree of life](img/16S_sequences.png)
 
+## Table of Contents
+- [What is Phyla?](#what-is-phyla)
+- [Disclaimer](#disclaimer)
+- [What is in this repo?](#what-is-in-this-repo)
+- [What is the difference between Phyla-α and Phyla-β?](#what-is-the-difference-between-phyla-α-and-phyla-β)
+- [Getting started with Phyla](#getting-started-with-phyla)
+  - [Step one: Install the environment](#step-one-install-the-enviornment)
+  - [Step two: Pip install the phyla package](#step-two-pip-install-the-phyla-package)
+  - [Step three: Run the Phyla test](#step-three-run-the-phyla-test)
+- [System Requirements and Scalability](#system-requirements-and-scalability)
+- [Tree Reasoning Benchmark](#tree-reasoning-benchmark)
+  - [Task 1: Tree Reconstruction](#task-1-tree-reconstruction)
+  - [Task 2: Taxonomic Clustering](#task-2-taxonomic-clustering)
+  - [Task 3: Functional Prediction](#task-3-functional-prediction)
+- [Evaluation Instructions](#evaluation-instructions)
+- [Training Instructions](#training-instructions)
+- [Citation](#citation)
+
 ## What is Phyla? 
 
 Phyla is a protein language model designed to model both intra-sequence and inter-sequence relationships. It leverages a hybrid state-space transformer architecture and is trained with a tree-based loss function. Phyla enables rapid construction of phylogenetic trees using protein sequences, offering insights that differ from classical methods in potentially functionally significant ways.
@@ -26,7 +44,7 @@ After releasing Phyla-α we revised our tree loss and retrained our model on a c
 
 ## Getting started with Phyla
 
-### Step one: Install the enviornment
+### Step one: Install the environment
 
 First you need to create an enviornment for mamba, following the instructions from their [Github](https://github.com/state-spaces/mamba) including the causal-conv1d package. I found installing this on a gpu helps get around some problems when installing. Once you can run this import without errors:
 
