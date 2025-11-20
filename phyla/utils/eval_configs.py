@@ -18,6 +18,7 @@ class TrainerConfig():
     num_annealing_steps: int = 10000
     num_warmup_steps: int = 1000
     use_quartet_loss: bool = True
+    use_tree_loss: bool = True
     use_mlm_loss: bool = True
     resume: bool = False
     run_name: str = 'default_run'

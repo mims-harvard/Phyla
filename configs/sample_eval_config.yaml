@@ -16,20 +16,20 @@ save_path: "",
 model_type: "Phyla-beta",
 #model_type: "ESM2",
 run_name: "",
-checkpoint_path: "/home/unix/yektefai/phyla_work/PhylaNeurips/weights/11564369",
-checkpoint_id: 620
+checkpoint_path: "/n/holylfs06/LABS/mzitnik_lab/Users/yektefaie/Phyla/phyla/checkpoints/epoch=00-step=003000-treefam_avg_normrf=0.6787.ckpt",
 } 
 
 dataset: {
 #dataset: "GTB",
-#dataset: 'GTB'
-dataset: "protein_gym"
+dataset: 'treefam'
+#dataset: "protein_gym"
 }
 
 model: {
   d_model: 256,
   n_layer: 16,
-  vocab_size: 24,
+  #vocab_size: 24,
+  vocab_size: 29,
   ssm_cfg: {},
   rms_norm: True,
   residual_in_fp32: True,
@@ -48,6 +48,6 @@ model: {
 
 eval: {
   random: False, 
-  device: "cuda:5"
-
+  device: "cuda:0",
+  extra_name: "trained_phyla"
 }

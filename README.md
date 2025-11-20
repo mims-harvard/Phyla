@@ -178,7 +178,11 @@ Choose the model to run:
 - `PROGEN2_LARGE`
 - `PROGEN2_XLARGE`
 
-#### 2. `dataset.dataset`
+#### 2. `trainer.checkpoint_path`
+
+Set to None to download and use default published weights or set to a specific path to use a trained checkpoint.
+
+#### 3. `dataset.dataset`
 
 Set one of the following datasets:
 
@@ -189,13 +193,17 @@ Set one of the following datasets:
 
 > Required files will be downloaded automatically.
 
-#### 3. `evaluating.device`
+#### 4. `eval.device`
 
 Set the GPU device to use (e.g., `"cuda:0"`, `"cuda:5"`).
 
-#### 4. `evaluating.random`
+#### 5. `eval.random`
 
 Set this to `true` to evaluate a randomly initialized model (default is `false`).
+
+#### 6. `eval.extra_name`
+
+By default the output of an eval run will save in `eval/eval_preds/{dataset.dataset}/{dataset.dataset}_results_{trainer.model_type}_{eval.extra_name}.csv`, by adding an extra name you can add in extra information about the benchmarking run.
 
 # Training Instructions
 

@@ -45,24 +45,28 @@ np.random.seed(0)
 torch.manual_seed(0)
 pl.seed_everything(42) 
 
-def load_model(checkpoint_file = None, config = None, random_model = False, device = 'cuda:0'):
-    
-    if 'Phyla' in config.model_name: 
-        model = phyla(name=config.model_name, device = device).load()
+def load_model(config, random_model = False):
+    checkpoint_file = config.trainer.checkpoint_path, config = config.model, device = config.eval.device
+    if 'Phyla' in config.model.model_name: 
+        custom_arch = False
+        if config.trainer.checkpoint_path is not None:
+            custom_arch = True
+        #MODIFY THAT HERE
+        model = phyla(name=config.model.model_name, custom_arch = custom_arch, device = config.eval.device).load(config.trainer.checkpoint_path)
         alphabet = None
 
-    elif config.model_name == "ESM2":
+    elif config.model.model_name == "ESM2":
         model, alphabet = esm.pretrained.esm2_t33_650M_UR50D()
     
-    elif config.model_name == "EVO":
+    elif config.model.model_name == "EVO":
         evo_model = Evo('evo-1-131k-base')
         model, tokenizer = evo_model.model, evo_model.tokenizer
 
-    elif config.model_name == "ESM3":
+    elif config.model.model_name == "ESM3":
         model = ESM3.from_pretrained("esm3_sm_open_v1").to("cuda")
         alphabet = None
     
-    elif config.model_name == "ESM2_3B":
+    elif config.model.model_name == "ESM2_3B":
         model, alphabet = esm.pretrained.esm2_t36_3B_UR50D()
     
     else:
@@ -74,9 +78,9 @@ def load_model(checkpoint_file = None, config = None, random_model = False, devi
 
     if "Phyla" in config.model_name:
         return {"model": model, "alphabet_tokenizer": None}
-    elif "ESM" in config.model_name:
-        return {"model": model.to(device), "alphabet_tokenizer": alphabet}
-    elif config.model_name == "EVO":
+    elif "ESM" in config.model.model_name:
+        return {"model": model.to(config.eval.device), "alphabet_tokenizer": alphabet}
+    elif config.model.model_name == "EVO":
         return {"model": model, "tokenizer": tokenizer}
     
 def generate_tree(seq_file, 
@@ -1224,7 +1228,7 @@ if __name__ == "__main__":
     print("\nLoading model %s..." % config.trainer.model_type)
     models = {}
     if "Phyla" in config.trainer.model_type:
-        phyla_model_dict = load_model(checkpoint_file = config.trainer.checkpoint_path, config = config.model, device = config.eval.device)
+        phyla_model_dict = load_model(config=config)
         models["Phyla"] = phyla_model_dict
     elif config.trainer.model_type == "ESM2":
         esm2_model_dict = load_model(config=ESM2_ModelConfig())
@@ -1251,7 +1255,7 @@ if __name__ == "__main__":
             os.system("rm mvudt6fd")
 
         last_dataset_id = 83
-        output_file = "eval/eval_preds/protein_gym/protein_gym_results_%s.csv" % (config.trainer.model_type)
+        output_file = "eval/eval_preds/protein_gym/protein_gym_results_%s_%s.csv" % (config.trainer.model_type, config.eval.extra_name)
         num_datasets = [0, last_dataset_id]   # Start with the smallest 83 datasets for MAMBA's current 80GB GPU constraints
         eval_datasets = []
         functional_prediction_benchmark(models, num_datasets, output_file, eval_datasets, device = config.eval.device)
@@ -1276,7 +1280,7 @@ if __name__ == "__main__":
             os.system("rm ke8pjyw7")
 
         last_dataset_id = 5822
-        output_file = "eval/eval_preds/treebase/treebase_results_%s.csv" % (config.trainer.model_type)
+        output_file = "eval/eval_preds/treebase/treebase_results_%s_%s.csv" % (config.trainer.model_type, config.eval.extra_name)
         num_datasets = [0, last_dataset_id]
         tree_reconstruction_benchmark(models, num_datasets, output_file, config.dataset.dataset, device = config.eval.device)
     
