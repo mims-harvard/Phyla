@@ -1,9 +1,6 @@
 # Phyla
 
 ![Tree of life](img/16S_sequences.png)
-> **Evolutionary Reasoning Does Not Arise in Standard Usage of Protein Language Models**\
-> Yasha Ektefaie*, Andrew Shen*, Lavik Jain, Maha Farhat, Marinka Zitnik\
-> Paper: https://www.biorxiv.org/content/10.1101/2025.01.17.633626v3
 
 ## What is Phyla? 
 
@@ -162,7 +159,7 @@ This tree-based propagation strategy yields the best Spearman correlation for Ph
 To evaluate tree reconstruction, taxonomic clustering, or functional prediction, run:
 
 ```bash
-python -m eval.evo_reasoning_eval configs/sample_eval_config.yaml
+python -m phyla.eval.evo_reasoning_eval configs/sample_eval_config.yaml
 ```
 
 ### Modifying the Config
@@ -181,7 +178,11 @@ Choose the model to run:
 - `PROGEN2_LARGE`
 - `PROGEN2_XLARGE`
 
-#### 2. `dataset.dataset`
+#### 2. `trainer.checkpoint_path`
+
+Set to None to download and use default published weights or set to a specific path to use a trained checkpoint.
+
+#### 3. `dataset.dataset`
 
 Set one of the following datasets:
 
@@ -192,15 +193,59 @@ Set one of the following datasets:
 
 > Required files will be downloaded automatically.
 
-#### 3. `evaluating.device`
+#### 4. `eval.device`
 
 Set the GPU device to use (e.g., `"cuda:0"`, `"cuda:5"`).
 
-#### 4. `evaluating.random`
+#### 5. `eval.random`
 
 Set this to `true` to evaluate a randomly initialized model (default is `false`).
 
-   
+#### 6. `eval.extra_name`
+
+By default the output of an eval run will save in `eval/eval_preds/{dataset.dataset}/{dataset.dataset}_results_{trainer.model_type}_{eval.extra_name}.csv`, by adding an extra name you can add in extra information about the benchmarking run.
+
+# Training Instructions
+
+We have built and stress-tested a full training pipeline for Phyla to ensure reproducibility. If your environment is set up correctly, **running `run.sh` is all you need** to launch training. Run it from within the phyla directory. All training configuration lives in `configs/sample_train_config.yaml`:
+
+
+Below is an explanation of the key parameters you may want to modify when retraining Phyla.
+
+## Trainer Settings
+
+- **`trainer.lr`**  
+  Learning rate. The default value was selected via grid search and is recommended unless you are experimenting.
+
+- **`trainer.record`**  
+  Set to `True` to log training runs to Weights & Biases.
+
+- **`trainer.save_path`**  
+  Path where model checkpoints will be saved.
+
+## Dataset Settings
+
+- **`dataset.dataset_directories`**  
+  A list of directories containing the cleaned OpenProteinSet trees.  
+  To train Phyla-β, download the cleaned dataset (~396 MB) from the Harvard Dataverse:  
+  https://dataverse.harvard.edu/api/access/datafile/13167774
+
+- **`dataset.dataset_size`**  
+  Number of trees to use for training.  
+  Set to `None` to train on the full dataset.
+
+## Model Settings
+
+- **`model.d_model`**  
+  Dimensionality of the model’s hidden representations.
+
+- **`model.n_layers`**  
+  Number of Bi-Mamba layers inside each Phyla block.
+
+- **`model.num_blocks`**  
+  Number of Phyla blocks.  
+  Each block consists of `n_layers` Bi-Mamba layers followed by a sparsified attention layer.
+
 ## Citation
 
 If you find the Phyla paper or codebase useful, please cite our work!

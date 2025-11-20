@@ -1,6 +1,6 @@
 from phyla import phyla
-from configs.eval_configs import *
-from configs.config_util import load_config
+from utils.eval_configs import *
+from utils.utils import load_config
 from pytorch_lightning import LightningModule
 from collections import OrderedDict
 from skbio import DistanceMatrix
@@ -45,24 +45,26 @@ np.random.seed(0)
 torch.manual_seed(0)
 pl.seed_everything(42) 
 
-def load_model(checkpoint_file = None, config = None, random_model = False, device = 'cuda:0'):
-    
-    if 'Phyla' in config.model_name: 
-        model = phyla(name=config.model_name, device = device).load()
+def load_model(config, random_model = False):
+    if 'Phyla' in config.model.model_name: 
+        custom_arch = False
+        if config.trainer.checkpoint_path is not None:
+            custom_arch = True
+        model = phyla(config, custom_arch = custom_arch, device = config.eval.device).load(config.trainer.checkpoint_path)
         alphabet = None
 
-    elif config.model_name == "ESM2":
+    elif config.model.model_name == "ESM2":
         model, alphabet = esm.pretrained.esm2_t33_650M_UR50D()
     
-    elif config.model_name == "EVO":
+    elif config.model.model_name == "EVO":
         evo_model = Evo('evo-1-131k-base')
         model, tokenizer = evo_model.model, evo_model.tokenizer
 
-    elif config.model_name == "ESM3":
+    elif config.model.model_name == "ESM3":
         model = ESM3.from_pretrained("esm3_sm_open_v1").to("cuda")
         alphabet = None
     
-    elif config.model_name == "ESM2_3B":
+    elif config.model.model_name == "ESM2_3B":
         model, alphabet = esm.pretrained.esm2_t36_3B_UR50D()
     
     else:
@@ -72,11 +74,11 @@ def load_model(checkpoint_file = None, config = None, random_model = False, devi
     # if torch.cuda.is_available():
     #     model = model.cuda()
 
-    if "Phyla" in config.model_name:
+    if "Phyla" in config.model.model_name:
         return {"model": model, "alphabet_tokenizer": None}
-    elif "ESM" in config.model_name:
-        return {"model": model.to(device), "alphabet_tokenizer": alphabet}
-    elif config.model_name == "EVO":
+    elif "ESM" in config.model.model.model_name:
+        return {"model": model.to(config.eval.device), "alphabet_tokenizer": alphabet}
+    elif config.model.model_name == "EVO":
         return {"model": model, "tokenizer": tokenizer}
     
 def generate_tree(seq_file, 
@@ -202,12 +204,16 @@ def generate_tree(seq_file,
 
     max_aa_dict = {"ESM2": 19532, "EVO": 62500} # Derived from papers
 
-
-    if "Phyla" in model_name:
+    if "Phyla" in model_name or 'MAMBA' in model_name or 'PHYLA' in model_name:
         with torch.no_grad():
-            sequence_embeddings = model(batch['encoded_sequences'].to(device), 
-                                        batch['sequence_mask'].to(device),
-                                        batch['cls_positions'].bool().to(device))
+            if 'TrainingModule' in str(type(model)):
+                sequence_embeddings = model(batch['encoded_sequences'].to(device), 
+                                            cls_token_mask = batch['cls_positions'].bool().to(device),
+                                            sequence_mask = batch['sequence_mask'].to(device))
+            else:
+                sequence_embeddings = model(batch['encoded_sequences'].to(device), 
+                                            batch['sequence_mask'].to(device),
+                                            batch['cls_positions'].bool().to(device))
 
     elif model_name == "ESM2" or model_name == "ESM2_3B":
 
@@ -1041,11 +1047,20 @@ def tree_reconstruction_benchmark(models, num_datasets, output_file_name, datase
     curr_dir = os.getcwd()
     if dataset_type == "treebase":
         # file_names = np.array(os.listdir(""))
+        if 'treebase_benchmark' not in os.listdir():
+            os.system("wget https://tinyurl.com/ke8pjyw7")
+            os.system("unzip ke8pjyw7")
+            os.system("rm ke8pjyw7")
         file_names = np.loadtxt("./data/treebase_datasets_1533.txt", dtype=str)
         file_names = file_names[num_datasets[0]:num_datasets[1]]
     elif (dictionary_data is not None or output_file_name == None) and dataset_type == "treefam":
+
+        if 'treefam.pickle' not in os.listdir():
+            os.system("wget https://tinyurl.com/yh78swxd")
+            os.system("mv yh78swxd treefam.pickle")
+        
         if output_file_name == None:
-            dictionary_data = pickle.load(open("", 'rb'))
+            dictionary_data = pickle.load(open("treefam.pickle", 'rb'))
             file_names = list(dictionary_data.keys())[:500]
         else:
             file_names = list(dictionary_data.keys())
@@ -1112,37 +1127,10 @@ def tree_reconstruction_benchmark(models, num_datasets, output_file_name, datase
                                             )
                 
                 start_time = time.time()
-                # TODO: Added in temporary try-catch for ESM2 and ESM2_3B for TreeBase
-                # try:
-                #     tree_dict = generate_tree(seq_file = sequence_path,
-                #                             tree_file = tree_path,
-                #                             model = models[model_name]["model"],
-                #                             alphabet_tokenizer = models[model_name]["alphabet_tokenizer"],
-                #                             model_name = model_name,
-                #                             dataset_type = config.dataset.dataset, 
-                #                             eval_mode = False)
-                # except:
-                #     print("General unknown error, skipping this sample")
-                #     general_error = True
-                #     continue
 
                 end_time = time.time()
                 tree_dicts[model_name] = tree_dict
                 time_dict[model_name] = end_time - start_time
-
-                # Save predicted tree into Newick string
-                # if dataset_type == "openfold":
-                #     dir_path = "%s/eval/eval_preds/openfold/%s" % (curr_dir, dataset_name)
-                # elif dataset_type == "openfold_small":
-                #     dir_path = "%s/eval/eval_preds/openfold_small/%s" % (curr_dir, dataset_name)
-                # elif dataset_type == "openfold_3tree":
-                #     dir_path = "%s/eval/eval_preds/openfold_3tree/%s" % (curr_dir, dataset_name)
-                # if not os.path.exists(dir_path):
-                #     os.mkdir(dir_path)
-                # file_path = "%s/%s_pred_tree.nh" % (dir_path, model_name)
-                # with open(file_path, "w") as f:
-                #     f.write(tree_dict["pred_tree_str"])
-                #     f.close()
 
             # TODO: Added in temporary try-catch for ESM2 and ESM2_3B for TreeBase
             if general_error:
@@ -1163,10 +1151,11 @@ def tree_reconstruction_benchmark(models, num_datasets, output_file_name, datase
             else:
                 # Still add values to normrfs 
                 # model_id = output_file_name.split("_")[-1].replace('.csv', '')
-                model_id = output_file_name.split("_")[-2]
-                if '-' in model_id:
-                    model_id = model_id.split('-')[0]
-
+                # model_id = output_file_name.split("_")[-2]
+                # if '-' in model_id:
+                #     model_id = model_id.split('-')[0]
+                # import pdb; pdb.set_trace()
+                model_id = list(models.keys())[0]
                 normrfs.append(tier1_dict[model_id]["norm_rf"])
                 # Write results to output file
                 output_file_path = "%s/%s" % (curr_dir, output_file_name)
@@ -1211,7 +1200,7 @@ if __name__ == "__main__":
     print("\nLoading model %s..." % config.trainer.model_type)
     models = {}
     if "Phyla" in config.trainer.model_type:
-        phyla_model_dict = load_model(checkpoint_file = config.trainer.checkpoint_path, config = config.model, device = config.eval.device)
+        phyla_model_dict = load_model(config=config)
         models["Phyla"] = phyla_model_dict
     elif config.trainer.model_type == "ESM2":
         esm2_model_dict = load_model(config=ESM2_ModelConfig())
@@ -1238,7 +1227,7 @@ if __name__ == "__main__":
             os.system("rm mvudt6fd")
 
         last_dataset_id = 83
-        output_file = "eval/eval_preds/protein_gym/protein_gym_results_%s.csv" % (config.trainer.model_type)
+        output_file = "eval/eval_preds/protein_gym/protein_gym_results_%s_%s.csv" % (config.trainer.model_type, config.eval.extra_name)
         num_datasets = [0, last_dataset_id]   # Start with the smallest 83 datasets for MAMBA's current 80GB GPU constraints
         eval_datasets = []
         functional_prediction_benchmark(models, num_datasets, output_file, eval_datasets, device = config.eval.device)
@@ -1263,7 +1252,7 @@ if __name__ == "__main__":
             os.system("rm ke8pjyw7")
 
         last_dataset_id = 5822
-        output_file = "eval/eval_preds/treebase/treebase_results_%s.csv" % (config.trainer.model_type)
+        output_file = "eval/eval_preds/treebase/treebase_results_%s_%s.csv" % (config.trainer.model_type, config.eval.extra_name)
         num_datasets = [0, last_dataset_id]
         tree_reconstruction_benchmark(models, num_datasets, output_file, config.dataset.dataset, device = config.eval.device)
     

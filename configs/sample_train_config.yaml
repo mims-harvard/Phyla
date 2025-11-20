@@ -1,34 +1,37 @@
 trainer: {
-lr: 0.0001,
+lr: 0.00001,
 record: True,
 epochs: 25000,
 epochs_callback: 5,
 steps_callback: 1000,
 scheduler: "warmup",
-num_warmup_steps: 150,
+num_warmup_steps: 10000,
 ddp: False,
 deepspeed: False,
-use_tree_loss: True,
+use_quartet_loss: True,
 use_mlm_loss: False,
 resume: False,
 symmetry_loss: 1,
-save_path: "",
+save_path: "Phyla/phyla/checkpoints/",
 model_type: "Phyla-beta",
 #model_type: "ESM2",
-run_name: "",
-checkpoint_path: "Phyla/phyla/checkpoints/epoch=00-step=003000-treefam_avg_normrf=0.6787.ckpt",
+run_name: "test",
+checkpoint_path: None,
+val_callback_freq: 50
 } 
 
 dataset: {
 #dataset: "GTB",
-dataset: 'treefam'
-#dataset: "protein_gym"
+#dataset: 'GTB'
+dataset_directories: ["yektefaie/Cleaned_Open_Protein_Set"],
+dataset_size: None,
+max_subtree_size_scaler: 1.0,
+# dataset: "protein_gym"
 }
 
 model: {
   d_model: 256,
   n_layer: 16,
-  #vocab_size: 24,
   vocab_size: 29,
   ssm_cfg: {},
   rms_norm: True,
@@ -44,10 +47,4 @@ model: {
   bidirectional_strategy: "add",
   bidirectional_weight_tie: True,
   ranking_loss: False
-}
-
-eval: {
-  random: False, 
-  device: "cuda:0",
-  extra_name: "trained_phyla"
 }

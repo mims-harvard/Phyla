@@ -20,7 +20,7 @@ except ImportError:
     RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
 
 import logging
-from ..utils.utils import load_config
+from utils.utils import load_config
 from skbio import DistanceMatrix
 from skbio.tree import nj
 
@@ -327,29 +327,23 @@ class Phyla(nn.Module):
                                    "S": 15, "T": 16, "W": 17, "Y": 18, "V": 19}
 
 
-    def __init__(self, config_path=None, logger = None, name=None, deepspeed = False, device = None):
+    def __init__(self, config, logger = None, deepspeed = False, custom_arch = False, device = None):
         super().__init__()
-
-        if name is None:
-            raise Exception("No name provided must provide a model name, see README for available names")
-        elif name.lower() == 'phyla-alpha' or name.lower() == 'phyla-beta':
+        name = config.model.model_name
+        if name is not None and (name.lower() == 'phyla-alpha' or name.lower() == 'phyla-beta'):
+            # The user is using a known model, not training their own
             self.version = name.lower()
-            config = Config()
-            if config_path: 
-                config = load_config(config_path)
-            if name.lower() == 'phyla-beta':
+            if name.lower() == 'phyla-beta' and custom_arch is False:
                 config.model.num_blocks = 3
                 config.model.bidirectional = True
                 config.model.bidirectional_strategy = "add"
                 config.model.bidirectional_weight_tie = True
-        else:
-            raise Exception(f"Name {name} not recognized")
         
         if device is None:
             self.device = torch.device('cuda:0')
         else:
             self.device = torch.device(device)
-        
+       
         modules = []
         modules.append(Mamba_LM_Tree_HeadModel(config.model, hidden_states=True, layer_idx = 0, logger = logger, device = self.device))
         for i in range(config.model.num_blocks-2):
@@ -371,27 +365,37 @@ class Phyla(nn.Module):
         self.logger_ = logger
         self.deepspeed = deepspeed
     
-    def load(self):
+    def load(self, checkpoint_file = None):
         if self.version == 'phyla-alpha':
-            if 'weights' not in os.listdir():
+            if checkpoint_file is not None:
+                path_to_checkpoint = checkpoint_file
+                state_dict = torch.load(path_to_checkpoint, map_location = self.device)
+                new_state_dict = {}
+                for key in state_dict.keys():
+                    new_state_dict[key.replace("model_name.", "")] = state_dict[key]
+                
+            elif 'weights' not in os.listdir():
                 os.mkdir('weights')
                 os.system("wget https://zenodo.org/records/14657163/files/phyla_alpha_291M_state_dict.pt -P weights")
+                path_to_checkpoint = "weights/phyla_alpha_291M_state_dict.pt"
 
-            path_to_checkpoint = "weights/phyla_alpha_291M_state_dict.pt"
-            state_dict = torch.load(path_to_checkpoint, map_location = self.device)
+                state_dict = torch.load(path_to_checkpoint, map_location = self.device)
 
-            new_state_dict = {}
-            for key in state_dict.keys():
-                new_state_dict[key.replace("_forward_module.model.", "")] = state_dict[key]
+                new_state_dict = {}
+                for key in state_dict.keys():
+                    new_state_dict[key.replace("_forward_module.model.", "")] = state_dict[key]
 
         elif self.version == 'phyla-beta':
-            if 'weights' not in os.listdir():
+            if checkpoint_file is not None:
+                path_to_checkpoint = checkpoint_file
+                state_dict = torch.load(path_to_checkpoint, map_location = self.device)['state_dict']
+                new_state_dict = {k.replace('model.','').replace('model_name.',''):v for k,v in state_dict.items()}
+            elif 'weights' not in os.listdir():
                 os.mkdir('weights')
                 os.system("wget https://dataverse.harvard.edu/api/access/datafile/11564369 -P weights")
-
-            path_to_checkpoint = "weights/11564369"
-            state_dict = torch.load(path_to_checkpoint, map_location = self.device)['state_dict']
-            new_state_dict = {k.replace('model.',''):v for k,v in state_dict.items()}
+                path_to_checkpoint = "weights/11564369"
+                state_dict = torch.load(path_to_checkpoint, map_location = self.device)['state_dict']
+                new_state_dict = {k.replace('model.',''):v for k,v in state_dict.items()}
         
         self.load_state_dict(new_state_dict, strict=True)
         self.to(self.device)

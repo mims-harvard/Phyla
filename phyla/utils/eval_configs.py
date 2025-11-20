@@ -17,20 +17,26 @@ class TrainerConfig():
     deepspeed: bool = False
     num_annealing_steps: int = 10000
     num_warmup_steps: int = 1000
+    use_quartet_loss: bool = True
     use_tree_loss: bool = True
     use_mlm_loss: bool = True
     resume: bool = False
     run_name: str = 'default_run'
     symmetry_loss: int = 0
+    val_callback_freq: int = 50
 
 class DatasetConfig():
-    dataset: str = 'zf10'
+    dataset: str = '40'
     #Number of sub trees per batch
     batch_size: int = 2
     #Number of sequences per sub tree
     sub_tree_size: int = 10
     #Detect what gpu you are on, make tree/trees in range of 0 to largest sub-tree size for that gpu
     adaptive_batch_size: bool = False
+    max_subtree_size_scaler: int = 1
+    new_construction: bool = False
+    dataset_directories: str = '/path/to/your/data'
+    dataset_size: int = None
 
 class Mamba_ModelConfig():
     d_model: int = 256
