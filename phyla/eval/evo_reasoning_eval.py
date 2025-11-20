@@ -46,13 +46,11 @@ torch.manual_seed(0)
 pl.seed_everything(42) 
 
 def load_model(config, random_model = False):
-    checkpoint_file = config.trainer.checkpoint_path, config = config.model, device = config.eval.device
     if 'Phyla' in config.model.model_name: 
         custom_arch = False
         if config.trainer.checkpoint_path is not None:
             custom_arch = True
-        #MODIFY THAT HERE
-        model = phyla(name=config.model.model_name, custom_arch = custom_arch, device = config.eval.device).load(config.trainer.checkpoint_path)
+        model = phyla(config, custom_arch = custom_arch, device = config.eval.device).load(config.trainer.checkpoint_path)
         alphabet = None
 
     elif config.model.model_name == "ESM2":
@@ -76,9 +74,9 @@ def load_model(config, random_model = False):
     # if torch.cuda.is_available():
     #     model = model.cuda()
 
-    if "Phyla" in config.model_name:
+    if "Phyla" in config.model.model_name:
         return {"model": model, "alphabet_tokenizer": None}
-    elif "ESM" in config.model.model_name:
+    elif "ESM" in config.model.model.model_name:
         return {"model": model.to(config.eval.device), "alphabet_tokenizer": alphabet}
     elif config.model.model_name == "EVO":
         return {"model": model, "tokenizer": tokenizer}
@@ -1129,37 +1127,10 @@ def tree_reconstruction_benchmark(models, num_datasets, output_file_name, datase
                                             )
                 
                 start_time = time.time()
-                # TODO: Added in temporary try-catch for ESM2 and ESM2_3B for TreeBase
-                # try:
-                #     tree_dict = generate_tree(seq_file = sequence_path,
-                #                             tree_file = tree_path,
-                #                             model = models[model_name]["model"],
-                #                             alphabet_tokenizer = models[model_name]["alphabet_tokenizer"],
-                #                             model_name = model_name,
-                #                             dataset_type = config.dataset.dataset, 
-                #                             eval_mode = False)
-                # except:
-                #     print("General unknown error, skipping this sample")
-                #     general_error = True
-                #     continue
 
                 end_time = time.time()
                 tree_dicts[model_name] = tree_dict
                 time_dict[model_name] = end_time - start_time
-
-                # Save predicted tree into Newick string
-                # if dataset_type == "openfold":
-                #     dir_path = "%s/eval/eval_preds/openfold/%s" % (curr_dir, dataset_name)
-                # elif dataset_type == "openfold_small":
-                #     dir_path = "%s/eval/eval_preds/openfold_small/%s" % (curr_dir, dataset_name)
-                # elif dataset_type == "openfold_3tree":
-                #     dir_path = "%s/eval/eval_preds/openfold_3tree/%s" % (curr_dir, dataset_name)
-                # if not os.path.exists(dir_path):
-                #     os.mkdir(dir_path)
-                # file_path = "%s/%s_pred_tree.nh" % (dir_path, model_name)
-                # with open(file_path, "w") as f:
-                #     f.write(tree_dict["pred_tree_str"])
-                #     f.close()
 
             # TODO: Added in temporary try-catch for ESM2 and ESM2_3B for TreeBase
             if general_error:
@@ -1180,10 +1151,11 @@ def tree_reconstruction_benchmark(models, num_datasets, output_file_name, datase
             else:
                 # Still add values to normrfs 
                 # model_id = output_file_name.split("_")[-1].replace('.csv', '')
-                model_id = output_file_name.split("_")[-2]
-                if '-' in model_id:
-                    model_id = model_id.split('-')[0]
-
+                # model_id = output_file_name.split("_")[-2]
+                # if '-' in model_id:
+                #     model_id = model_id.split('-')[0]
+                # import pdb; pdb.set_trace()
+                model_id = list(models.keys())[0]
                 normrfs.append(tier1_dict[model_id]["norm_rf"])
                 # Write results to output file
                 output_file_path = "%s/%s" % (curr_dir, output_file_name)

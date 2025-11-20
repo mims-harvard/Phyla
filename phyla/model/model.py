@@ -327,9 +327,9 @@ class Phyla(nn.Module):
                                    "S": 15, "T": 16, "W": 17, "Y": 18, "V": 19}
 
 
-    def __init__(self, config, logger = None, name=None, deepspeed = False, custom_arch = False, device = None):
+    def __init__(self, config, logger = None, deepspeed = False, custom_arch = False, device = None):
         super().__init__()
-
+        name = config.model.model_name
         if name is not None and (name.lower() == 'phyla-alpha' or name.lower() == 'phyla-beta'):
             # The user is using a known model, not training their own
             self.version = name.lower()
@@ -339,14 +339,11 @@ class Phyla(nn.Module):
                 config.model.bidirectional_strategy = "add"
                 config.model.bidirectional_weight_tie = True
         
-        if type(config_path) is not str and config_path is not None:
-            config = config_path
-        
         if device is None:
             self.device = torch.device('cuda:0')
         else:
             self.device = torch.device(device)
-        import pdb; pdb.set_trace()
+       
         modules = []
         modules.append(Mamba_LM_Tree_HeadModel(config.model, hidden_states=True, layer_idx = 0, logger = logger, device = self.device))
         for i in range(config.model.num_blocks-2):
@@ -392,14 +389,14 @@ class Phyla(nn.Module):
             if checkpoint_file is not None:
                 path_to_checkpoint = checkpoint_file
                 state_dict = torch.load(path_to_checkpoint, map_location = self.device)['state_dict']
-                new_state_dict = {k.replace('model_name.',''):v for k,v in state_dict.items()}
+                new_state_dict = {k.replace('model.','').replace('model_name.',''):v for k,v in state_dict.items()}
             elif 'weights' not in os.listdir():
                 os.mkdir('weights')
                 os.system("wget https://dataverse.harvard.edu/api/access/datafile/11564369 -P weights")
                 path_to_checkpoint = "weights/11564369"
                 state_dict = torch.load(path_to_checkpoint, map_location = self.device)['state_dict']
                 new_state_dict = {k.replace('model.',''):v for k,v in state_dict.items()}
-        import pdb; pdb.set_trace()
+        
         self.load_state_dict(new_state_dict, strict=True)
         self.to(self.device)
         return self

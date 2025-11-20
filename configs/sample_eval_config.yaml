@@ -21,7 +21,7 @@ checkpoint_path: "/n/holylfs06/LABS/mzitnik_lab/Users/yektefaie/Phyla/phyla/chec
 
 dataset: {
 #dataset: "GTB",
-dataset: 'treefam'
+dataset: 'treebase'
 #dataset: "protein_gym"
 }
 
